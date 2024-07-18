@@ -1,34 +1,49 @@
-import sys
 import pygame
 from pygame.locals import *
-from OpenGL.GL import *
-from OpenGL.GL.shaders import compileProgram, compileShader
+import sys
+import moderngl
+import numpy as np
+# from player import Player
 
-def create_shader_program():
-    with open("shaders/fragment.glsl", "r") as f:
-        fragment_shader = compileShader(f.read(), GL_FRAGMENT_SHADER)
-    shader_program = compileProgram(fragment_shader)
-    return shader_program
+vertex_shader = """
+#version 330
+
+in vec2 in_vert;
+void main() {
+    gl_Position = vec4(in_vert, 0.0, 1.0);
+}
+"""
 
 pygame.init()
-display = (800, 600)
-pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+screen = pygame.display.set_mode((1920, 1080), DOUBLEBUF | OPENGL | FULLSCREEN)
+clock = pygame.time.Clock()
 
-shader_program = create_shader_program()
-glUseProgram(shader_program)
+ctx = moderngl.create_context()
 
-while True:
-    [sys.exit() for event in pygame.event.get() if event.type == pygame.QUIT]
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+prog = ctx.program(vertex_shader=vertex_shader, fragment_shader=open("shaders/fragment.glsl", "r").read())
 
-    glBegin(GL_QUADS)
-    glVertex2f(-1, -1)
-    glVertex2f(1, -1)
-    glVertex2f(1, 1)
-    glVertex2f(-1, 1)
+vertices = [-1, -1], [1, -1], [-1, 1], [1, 1]
+vao = ctx.simple_vertex_array(prog, ctx.buffer(np.array(vertices, dtype=np.float32)), 'in_vert')
 
-    glEnd()
+prog['u_resolution'] = (1920, 1080)
 
+pygame.mouse.set_visible(False)
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            running = False
+    ctx.clear(1.0, 1.0, 1.0)
+
+    prog['u_position'] = (0, 0, -35)
+    prog['u_mouse'] = [0, 0]
+    
+    
+    vao.render(moderngl.TRIANGLE_STRIP)
     pygame.display.flip()
-    pygame.time.wait(10)
+    pygame.mouse.set_pos(400, 300)
+    clock.tick(60)
+    
 
+pygame.quit()
+sys.exit()
