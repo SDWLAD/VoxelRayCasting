@@ -3,7 +3,7 @@ from pygame.locals import *
 import sys
 import moderngl
 import numpy as np
-# from player import Player
+from camera import Camera
 
 vertex_shader = """
 #version 330
@@ -28,15 +28,19 @@ vao = ctx.simple_vertex_array(prog, ctx.buffer(np.array(vertices, dtype=np.float
 prog['u_resolution'] = (1920, 1080)
 
 pygame.mouse.set_visible(False)
-running = True
-while running:
+
+camera = Camera(pygame.Vector3(0, 0, -35))
+
+while 1:
     for event in pygame.event.get():
         if event.type == QUIT:
-            running = False
+            sys.exit()
     ctx.clear(1.0, 1.0, 1.0)
 
-    prog['u_position'] = (0, 0, -35)
-    prog['u_mouse'] = [0, 0]
+    camera.update()
+
+    prog['u_position'] = camera.position
+    prog['u_mouse'] = camera.rotation.xy
     
     
     vao.render(moderngl.TRIANGLE_STRIP)
@@ -44,6 +48,3 @@ while running:
     pygame.mouse.set_pos(400, 300)
     clock.tick(60)
     
-
-pygame.quit()
-sys.exit()
