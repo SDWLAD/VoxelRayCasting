@@ -1,10 +1,11 @@
-#version 330 core
+#version 440 
 layout (location = 0) out vec4 fragColor;
 
 uniform vec2 u_resolution;
-uniform sampler3D u_world;
 uniform vec3 u_position;
 uniform vec2 u_mouse;
+uniform sampler2D u_skybox;
+uniform bool u_world[8];
 
 mat2 rot(float a) {
     float s = sin(a);
@@ -27,20 +28,24 @@ struct Material{
 };
 
 bool getVoxel(ivec3 p) {
-    return (length(p) < 15);
+    if (length(p) < 8){
+        return true;
+    }
+    return false;
+}
+
+vec3 getSky(vec3 rd) {
+    vec2 uv = vec2(atan(rd.z, rd.x) / 3.14159265, -rd.y);
+	uv = uv*0.5 + 0.5;
+    vec3 col = texture2D(u_skybox, uv).rgb;
+    return col;
 }
 
 vec3 lighting(vec3 norm, vec3 rd, vec3 col) {
-    vec3 lightDir = normalize(vec3(-1.0, 3.0, -1.0));
+    vec3 lightDir = normalize(vec3(0.3, 1, -0.5));
     float diffuseAttn = max(dot(norm, lightDir), 0.0);
-    vec3 light = vec3(1.0,0.9,0.9);
     
-    vec3 ambient = vec3(0.2, 0.2, 0.3);
-    
-    vec3 reflected = reflect(rd, norm);
-    float specularAttn = max(dot(reflected, lightDir), 0.0);
-    
-    return col*(diffuseAttn*light*1.0 + specularAttn*light*0.6 + ambient);
+    return col*(diffuseAttn);
 }
 
 Hit intersect(Ray ray) {
@@ -93,7 +98,7 @@ Hit intersect(Ray ray) {
 }
 
 vec3 render(Ray ray){
-    vec3 col = vec3(0);
+    vec3 col = getSky(ray.direction);
     Hit hit = intersect(ray);
 
     if (hit.distance >= 0)

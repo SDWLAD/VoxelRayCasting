@@ -26,6 +26,11 @@ vertices = [-1, -1], [1, -1], [-1, 1], [1, 1]
 vao = ctx.simple_vertex_array(prog, ctx.buffer(np.array(vertices, dtype=np.float32)), 'in_vert')
 
 prog['u_resolution'] = (1920, 1080)
+texture = ctx.texture((2560, 1280), 4, pygame.image.tobytes(pygame.image.load('imgs/1.png'), 'RGBA'))
+
+texture.use(0)
+
+prog['u_skybox'].value = 0
 
 pygame.mouse.set_visible(False)
 
