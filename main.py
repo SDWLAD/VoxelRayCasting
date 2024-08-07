@@ -5,58 +5,67 @@ import moderngl
 import numpy as np
 from camera import Camera
 
-vertex_shader = """
-#version 330
+class Engine:
+    def __init__(self, resolution = (1920, 1080)):
+        pygame.init()
+        self.screen = pygame.display.set_mode(resolution, DOUBLEBUF | OPENGL | FULLSCREEN)
+        self.clock = pygame.time.Clock()
+        pygame.mouse.set_visible(False)
 
-in vec2 in_vert;
-void main() {
-    gl_Position = vec4(in_vert, 0.0, 1.0);
-}
-"""
+        self.ctx = moderngl.create_context()
 
-pygame.init()
-screen = pygame.display.set_mode((1920, 1080), DOUBLEBUF | OPENGL | FULLSCREEN)
-clock = pygame.time.Clock()
+        self.prog = self.load_shaders('shaders/vertex.glsl', 'shaders/fragment.glsl')
 
-ctx = moderngl.create_context()
+        vertices = [-1, -1], [1, -1], [-1, 1], [1, 1]
+        self.vao = self.ctx.simple_vertex_array(self.prog, self.ctx.buffer(np.array(vertices, dtype=np.float32)), 'in_vert')
 
-prog = ctx.program(vertex_shader=vertex_shader, fragment_shader=open("shaders/fragment.glsl", "r").read())
+        self.prog['u_resolution'] = resolution
+        texture = self.ctx.texture((2560, 1280), 4, pygame.image.tobytes(pygame.image.load('imgs/1.png'), 'RGBA'))
+        texture.use(0)
 
-vertices = [-1, -1], [1, -1], [-1, 1], [1, 1]
-vao = ctx.simple_vertex_array(prog, ctx.buffer(np.array(vertices, dtype=np.float32)), 'in_vert')
+        self.prog['u_skybox'].value = 0
 
-prog['u_resolution'] = (1920, 1080)
-texture = ctx.texture((2560, 1280), 4, pygame.image.tobytes(pygame.image.load('imgs/1.png'), 'RGBA'))
-texture.use(0)
+        voxel_data = np.load('a.npy')
+        voxel_texture = self.ctx.texture3d((64, 64, 64), 1, voxel_data.tobytes())
+        voxel_texture.filter = (moderngl.NEAREST, moderngl.NEAREST)
+        voxel_texture.use(1)
+        self.prog['u_voxel_data'] = 1
 
-prog['u_skybox'].value = 0
+        self.camera = Camera(pygame.Vector3(0, 0, 0))
 
-def load_voxel_model(filename):
-    data = np.load(filename)
-    return data
+    def load_shaders(self, vertex_shader_name, fragment_shader_name):
+        with open(vertex_shader_name, 'r') as f:
+            vertex_shader = f.read()
+        with open(fragment_shader_name, 'r') as f:
+            fragment_shader = f.read()
+        return self.ctx.program(vertex_shader, fragment_shader)
 
-voxel_data = load_voxel_model('a.npy')
-voxel_texture = ctx.texture3d((64, 64, 64), 1, voxel_data.tobytes())
-voxel_texture.filter = (moderngl.NEAREST, moderngl.NEAREST)
-voxel_texture.use(1)  # Bind to texture unit 1
-prog['u_voxel_data'] = 1
+    def check_events(self):
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                sys.exit()
 
-pygame.mouse.set_visible(False)
+    def render(self):
+        self.ctx.clear(1.0, 1.0, 1.0)
 
-camera = Camera(pygame.Vector3(0, 0, 0))
+        self.prog['u_position'] = self.camera.position
+        self.prog['u_mouse'] = self.camera.rotation.xy
+        
+        self.vao.render(moderngl.TRIANGLE_STRIP)
 
-while 1:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            sys.exit()
-    ctx.clear(1.0, 1.0, 1.0)
+    def update(self):
+        self.camera.update()
+        pygame.mouse.set_pos(400, 300)
 
-    camera.update()
+    def run(self):
+        while 1:
+            self.check_events()
+            self.update()
+            self.render()
 
-    prog['u_position'] = camera.position
-    prog['u_mouse'] = camera.rotation.xy
-    
-    vao.render(moderngl.TRIANGLE_STRIP)
-    pygame.display.flip()
-    pygame.mouse.set_pos(400, 300)
-    clock.tick(60)
+            pygame.display.flip()
+            self.clock.tick(60)
+
+if __name__ == '__main__':
+    engine = Engine()
+    engine.run()
