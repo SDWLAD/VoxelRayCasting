@@ -27,14 +27,23 @@ vao = ctx.simple_vertex_array(prog, ctx.buffer(np.array(vertices, dtype=np.float
 
 prog['u_resolution'] = (1920, 1080)
 texture = ctx.texture((2560, 1280), 4, pygame.image.tobytes(pygame.image.load('imgs/1.png'), 'RGBA'))
-
 texture.use(0)
 
 prog['u_skybox'].value = 0
 
+def load_voxel_model(filename):
+    data = np.load(filename)
+    return data
+
+voxel_data = load_voxel_model('a.npy')
+voxel_texture = ctx.texture3d((64, 64, 64), 1, voxel_data.tobytes())
+voxel_texture.filter = (moderngl.NEAREST, moderngl.NEAREST)
+voxel_texture.use(1)  # Bind to texture unit 1
+prog['u_voxel_data'] = 1
+
 pygame.mouse.set_visible(False)
 
-camera = Camera(pygame.Vector3(0, 0, -35))
+camera = Camera(pygame.Vector3(0, 0, 0))
 
 while 1:
     for event in pygame.event.get():
@@ -47,9 +56,7 @@ while 1:
     prog['u_position'] = camera.position
     prog['u_mouse'] = camera.rotation.xy
     
-    
     vao.render(moderngl.TRIANGLE_STRIP)
     pygame.display.flip()
     pygame.mouse.set_pos(400, 300)
     clock.tick(60)
-    

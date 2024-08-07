@@ -5,7 +5,7 @@ uniform vec2 u_resolution;
 uniform vec3 u_position;
 uniform vec2 u_mouse;
 uniform sampler2D u_skybox;
-uniform bool u_world[8];
+uniform sampler3D u_voxel_data;
 
 mat2 rot(float a) {
     float s = sin(a);
@@ -28,16 +28,18 @@ struct Material{
 };
 
 bool getVoxel(ivec3 p) {
-    if (length(p) < 8){
-        return true;
+    if (p.x < 0 || p.y < 0 || p.z < 0 || p.x >= 64 || p.y >= 64 || p.z >= 64) {
+        return false;
     }
-    return false;
+    float voxel = texture(u_voxel_data, vec3(p) / 64.0).r;
+    if (voxel != 0.0)
+        return true;
 }
 
 vec3 getSky(vec3 rd) {
     vec2 uv = vec2(atan(rd.z, rd.x) / 3.14159265, -rd.y);
 	uv = uv*0.5 + 0.5;
-    vec3 col = texture2D(u_skybox, uv).rgb;
+    vec3 col = texture(u_skybox, uv).rgb;
     return col;
 }
 
@@ -64,7 +66,7 @@ Hit intersect(Ray ray) {
     tMaxZ = tDelta.z * ((ray.direction.z>0.0) ? (1.0 - fr.z) : fr.z);
 
     vec3 norm;
-    const int maxTrace = 100;
+    const int maxTrace = 200;
     
     for (int i = 0; i < maxTrace; i++) {
         if (getVoxel(ivec3(pos))) {
