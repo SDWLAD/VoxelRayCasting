@@ -66,7 +66,7 @@ Hit intersect(Ray ray) {
     tMaxZ = tDelta.z * ((ray.direction.z>0.0) ? (1.0 - fr.z) : fr.z);
 
     vec3 norm;
-    const int maxTrace = 200;
+    const int maxTrace = 100;
     
     for (int i = 0; i < maxTrace; i++) {
         if (getVoxel(ivec3(pos))) {
