@@ -12,4 +12,4 @@ with open('models/monu3.ply', 'r') as f:
                 if [str(i-32), str(k-32), str(j)] in obj:
                     a[i][j][k] = 1
     
-    np.save('model.npy', a)
+    np.save('models/model2.npy', a)
