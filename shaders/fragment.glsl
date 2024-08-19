@@ -52,52 +52,42 @@ vec3 lighting(vec3 norm, vec3 rd, vec3 col) {
 
 Hit intersect(Ray ray) {
     vec3 pos = floor(ray.origin);
-    
     vec3 step = sign(ray.direction);
-    vec3 tDelta = step / ray.direction;
-
-    
-    float tMaxX, tMaxY, tMaxZ;
-    
+    vec3 invDir = 1.0 / ray.direction;
+    vec3 tDelta = abs(invDir);
     vec3 fr = fract(ray.origin);
-    
-    tMaxX = tDelta.x * ((ray.direction.x>0.0) ? (1.0 - fr.x) : fr.x);
-    tMaxY = tDelta.y * ((ray.direction.y>0.0) ? (1.0 - fr.y) : fr.y);
-    tMaxZ = tDelta.z * ((ray.direction.z>0.0) ? (1.0 - fr.z) : fr.z);
+
+    float tMaxX = tDelta.x * ((step.x > 0.0) ? (1.0 - fr.x) : fr.x);
+    float tMaxY = tDelta.y * ((step.y > 0.0) ? (1.0 - fr.y) : fr.y);
+    float tMaxZ = tDelta.z * ((step.z > 0.0) ? (1.0 - fr.z) : fr.z);
 
     vec3 norm;
+    ivec3 iPos = ivec3(pos);  // Перетворення в ціле число для getVoxel
+
     const int maxTrace = 100;
-    
     for (int i = 0; i < maxTrace; i++) {
-        if (getVoxel(ivec3(pos))) {
-            return Hit(length(pos-ray.origin), norm);
+        if (getVoxel(iPos)) {
+            return Hit(length(pos - ray.origin), norm);
         }
 
-        if (tMaxX < tMaxY) {
-            if (tMaxZ < tMaxX) {
-                tMaxZ += tDelta.z;
-                pos.z += step.z;
-                norm = vec3(0, 0,-step.z);
-            } else {
-                tMaxX += tDelta.x;
-            	pos.x += step.x;
-                norm = vec3(-step.x, 0, 0);
-            }
+        if (tMaxX < tMaxY && tMaxX < tMaxZ) {
+            tMaxX += tDelta.x;
+            iPos.x += int(step.x);  // Використання цілих чисел для коректного індексу
+            norm = vec3(-step.x, 0.0, 0.0);
+        } else if (tMaxY < tMaxZ) {
+            tMaxY += tDelta.y;
+            iPos.y += int(step.y);
+            norm = vec3(0.0, -step.y, 0.0);
         } else {
-            if (tMaxZ < tMaxY) {
-                tMaxZ += tDelta.z;
-                pos.z += step.z;
-                norm = vec3(0, 0, -step.z);
-            } else {
-            	tMaxY += tDelta.y;
-            	pos.y += step.y;
-                norm = vec3(0, -step.y, 0);
-            }
+            tMaxZ += tDelta.z;
+            iPos.z += int(step.z);
+            norm = vec3(0.0, 0.0, -step.z);
         }
     }
 
- 	return Hit(-1., vec3(0.));
+    return Hit(-1.0, vec3(0.0));
 }
+
 
 vec3 render(Ray ray){
     vec3 col = getSky(ray.direction);
