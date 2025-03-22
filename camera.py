@@ -1,4 +1,5 @@
 import pygame as pg
+from settings import *
 import math
 
 class Camera:
@@ -16,7 +17,7 @@ class Camera:
         mouse_dx, mouse_dy = pg.mouse.get_rel()
         self.rotation.x += mouse_dx * self.mouse_sensitivity
         self.rotation.y += mouse_dy * self.mouse_sensitivity
-        self.rotation.y = max(-math.pi/2, min(math.pi/2, self.rotation.y))
+        pg.mouse.set_pos((WIN_RES[0]//2, WIN_RES[1]//2))
 
     def keyboard_control(self):
         key_state = pg.key.get_pressed()

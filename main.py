@@ -12,14 +12,14 @@ class Engine:
     def __init__(self):
         pygame.init()
 
-        self.screen = pygame.display.set_mode(WIN_RES, DOUBLEBUF | OPENGL)
+        self.screen = pygame.display.set_mode(WIN_RES, DOUBLEBUF | OPENGL | FULLSCREEN)
         self.ctx = moderngl.create_context()
 
         self.clock = pygame.time.Clock()
         self.delta_time = 0
         self.time = 0
 
-        pygame.event.set_grab(True)
+        # pygame.event.set_grab(True)
         pygame.mouse.set_visible(False)
 
         self.is_running = True
